@@ -1,0 +1,577 @@
+Here is the complete set of files for your BlueNoteLock project, with the repository name updated to BlueNoteLock and the GitHub username set to Loomidi.
+Remember to create the top-level directory as BlueNoteLock on your local machine.
+Project Structure
+BlueNoteLock/
+├── js/
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── Vector2D.js
+│   │   │   ├── BlueShellLock.js  <-- Component name remains for the puzzle
+│   │   │   ├── GameOfLife.js
+│   │   │   └── PaperScene.js
+│   │   ├── App.js
+│   │   └── index.js
+│   ├── public/
+│   │   └── index.html
+│   ├── package.json
+│   └── Dockerfile
+├── java/
+│   ├── Vector2D.java
+│   ├── BlueShellLock.java  <-- Component name remains for the puzzle
+│   ├── GameOfLife.java
+│   ├── Main.java
+│   └── test.jsh
+├── README.md
+├── docker-compose.yml
+├── LICENSE
+└── .gitignore
+
+File 1: js/package.json
+{
+  "name": "BlueNoteLock",
+  "version": "1.0.0",
+  "description": "BlueNoteLock: A dynamic vector puzzle with Game of Life, Paper.js, React Fiber, Loom, and Fiber.js",
+  "homepage": "https://Loomidi.github.io/BlueNoteLock",
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build"
+  },
+  "dependencies": {
+    "@psychobolt/react-paperjs": "^0.0.26",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "react-scripts": "^5.0.1",
+    "loom-js": "^1.10.0",
+    "fibers": "^5.0.3"
+  },
+  "devDependencies": {
+    "gh-pages": "^6.1.1"
+  }
+}
+
+File 2: js/public/index.html
+<!DOCTYPE html>
+<html>
+<head>
+  <title>BlueNoteLock</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden; /* Prevent scrollbars from appearing */
+      background-color: #0d1117; /* Dark background for a techy feel */
+      color: #c9d1d9; /* Light text color */
+      font-family: 'Inter', sans-serif; /* Modern font */
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh; /* Full viewport height */
+    }
+    #root {
+      width: 100%;
+      max-width: 900px; /* Max width for better readability on large screens */
+      padding: 20px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    h1 {
+      color: #58a6ff; /* Blue accent color */
+      margin-bottom: 20px;
+      font-size: 2.5em;
+      text-shadow: 0 0 8px rgba(88, 166, 255, 0.5); /* Subtle glow */
+    }
+    p {
+      margin-top: 15px;
+      font-size: 1.1em;
+      color: #8b949e;
+    }
+    canvas {
+      border-radius: 12px; /* Rounded corners for the canvas */
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5); /* Deep shadow */
+      background-color: #161b22; /* Darker background for canvas */
+      width: 100%; /* Make canvas responsive */
+      height: auto; /* Maintain aspect ratio */
+      max-height: 600px; /* Limit max height */
+    }
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 1.8em;
+      }
+      p {
+        font-size: 0.95em;
+      }
+      #root {
+        padding: 10px;
+      }
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="root"></div>
+</body>
+</html>
+
+File 3: js/src/App.js
+import React from 'react';
+import PaperScene from './components/PaperScene';
+
+function App() {
+  return (
+    <div style={{ textAlign: 'center', fontFamily: 'Inter, sans-serif', padding: '20px' }}>
+      <h1 style={{ color: '#58a6ff', textShadow: '0 0 8px rgba(88, 166, 255, 0.5)' }}>BlueNoteLock with Game of Life</h1>
+      {/* PaperScene will render the canvas */}
+      <PaperScene width={800} height={600} />
+      <p style={{ marginTop: '20px', fontSize: '1.1em', color: '#8b949e' }}>Click the orange rectangle below the grid to pause/resume the Game of Life.</p>
+    </div>
+  );
+}
+
+export default App;
+
+File 4: js/src/index.js
+import React from 'react';
+import ReactDOM from 'react-dom';
+import App from './App';
+
+ReactDOM.render(<App />, document.getElementById('root'));
+
+File 5: js/src/components/Vector2D.js
+import { Point } from '@psychobolt/react-paperjs';
+
+/**
+ * Represents a 2D vector with an additional conductivity property.
+ * Uses Paper.js Point for core vector operations.
+ */
+export class Vector2D {
+  /**
+   * Creates an instance of Vector2D.
+   * @param {number} x - The x-coordinate.
+   * @param {number} y - The y-coordinate.
+   * @param {number} conductivity - A custom property representing conductivity.
+   */
+  constructor(x = 0, y = 0, conductivity = 150) {
+    this.point = new Point(x, y);
+    this.conductivity = conductivity;
+  }
+
+  /**
+   * Adds another Vector2D to this vector.
+   * @param {Vector2D} other - The other vector to add.
+   * @returns {Vector2D} A new Vector2D representing the sum.
+   */
+  add(other) {
+    return new Vector2D(
+      this.point.x + other.point.x,
+      this.point.y + other.point.y,
+      (this.conductivity + other.conductivity) / 2 // Average conductivity
+    );
+  }
+
+  /**
+   * Warps the vector's coordinates based on a scale factor.
+   * Simulates a "graphene-inspired" distortion.
+   * @param {number} scale - The scale factor for warping.
+   * @returns {Vector2D} A new warped Vector2D.
+   */
+  warp(scale) {
+    return new Vector2D(
+      this.point.x * (1 + scale * 0.1),
+      this.point.y * (1 + scale * 0.1),
+      this.conductivity
+    );
+  }
+
+  /**
+   * Calculates the magnitude of the vector, scaled by its conductivity.
+   * @returns {number} The scaled magnitude.
+   */
+  magnitude() {
+    return this.point.length * this.conductivity;
+  }
+
+  /**
+   * Returns a string representation of the vector.
+   * @returns {string} String representation.
+   */
+  toString() {
+    return `Vector2D(${this.point.x}, ${this.point.y}, conductivity=${this.conductivity})`;
+  }
+}
+
+File 6: js/src/components/BlueShellLock.js
+import React, { useState, useEffect } from 'react';
+import { Group, Path, Circle } from '@psychobolt/react-paperjs';
+import { Vector2D } from './Vector2D';
+import Fiber from 'fibers'; // For cooperative multitasking, though simple intervals might suffice for this use case
+
+/**
+ * BlueShellLock component: A dynamic tetrahedron puzzle.
+ * It animates a "warp" effect and triggers an unlock status.
+ */
+export const BlueShellLock = ({ center, onUnlock }) => {
+  const [warpFactor, setWarpFactor] = useState(0); // Controls the animation state
+  const [isUnlocked, setIsUnlocked] = useState(false); // Tracks unlock status
+  const vCenter = new Vector2D(center.x, center.y, 150); // Center point as a Vector2D
+
+  // Define the tetrahedron vertices relative to the center, then apply warp effect
+  const vertices = [
+    new Vector2D(vCenter.point.x, vCenter.point.y - 50, 150),
+    new Vector2D(vCenter.point.x - 50, vCenter.point.y + 30, 150),
+    new Vector2D(vCenter.point.x + 50, vCenter.point.y + 30, 150),
+    new Vector2D(vCenter.point.x, vCenter.point.y + 10, 150)
+  ].map(v => v.warp(warpFactor)); // Apply warp to each vertex
+
+  // Animation and unlock logic using Fiber for cooperative multitasking
+  useEffect(() => {
+    // Wrap the interval in a Fiber to simulate cooperative multitasking
+    // In this simple case, a direct setInterval would also work, but Fiber is included per requirements.
+    const fiber = Fiber(() => {
+      const interval = setInterval(() => {
+        setWarpFactor(prev => {
+          const newFactor = (prev + 0.05) % 1; // Increment warp factor, loop from 0 to 1
+          // Check for unlock condition: if warpFactor crosses a threshold and not already unlocked
+          if (newFactor > 0.95 && !isUnlocked) {
+            setIsUnlocked(true); // Set internal state to unlocked
+            onUnlock(true); // Notify parent component
+          }
+          return newFactor;
+        });
+      }, 50); // Update every 50ms for smooth animation
+      return () => clearInterval(interval); // Cleanup interval on component unmount
+    });
+
+    fiber.run(); // Start the Fiber
+
+    return () => {
+      // Cleanup function for useEffect: ensures the Fiber is stopped if the component unmounts
+      if (fiber.isAlive()) {
+        fiber.throwInto(new Error('Component unmounted')); // Stop the fiber gracefully
+      }
+    };
+  }, [isUnlocked, onUnlock]); // Rerun effect if isUnlocked or onUnlock changes
+
+  // Console logs for debugging and demonstrating vector properties
+  console.log(`BlueShellLock (puzzle component): ${isUnlocked ? 'Unlocked' : 'Locked'}`);
+  console.log(`Center: ${vCenter}`);
+  console.log(`Vertices: ${vertices.map(v => v.toString()).join(', ')}`);
+
+  return (
+    <Group name="blueShellLock">
+      {/* Render the tetrahedron shape */}
+      <Path
+        segments={vertices.map(v => [v.point.x, v.point.y])} // Use Paper.js Point coordinates
+        closed // Close the path to form a shape
+        fillColor={isUnlocked ? '#00FF00' : '#1E90FF'} // Green when unlocked, blue when locked
+        strokeColor="white" // White border
+        opacity={0.8 + warpFactor * 0.2} // Opacity changes with warpFactor for visual effect
+      />
+      {/* Render a small circle at the center */}
+      <Circle
+        center={[vCenter.point.x, vCenter.point.y]}
+        radius={5}
+        fillColor="white"
+      />
+    </Group>
+  );
+};
+
+File 7: js/src/components/GameOfLife.js
+import React, { useState, useEffect } from 'react';
+import { Group, Rectangle } from '@psychobolt/react-paperjs';
+import Fiber from 'fibers'; // For cooperative multitasking
+
+/**
+ * GameOfLife component: Implements Conway's Game of Life cellular automaton.
+ * Renders a grid with cells that evolve over time.
+ */
+export const GameOfLife = ({ x, y, width, height, cellSize }) => {
+  // gridSize: 20x20 grid for the Game of Life.
+  // If "⁶" implied a 6x6 grid, change this to `const gridSize = 6;`
+  const gridSize = 20;
+  
+  // Initialize the grid with a glider pattern.
+  const [grid, setGrid] = useState(() => {
+    const g = Array(gridSize).fill().map(() => Array(gridSize).fill(0));
+    // Glider pattern initialization (adjust indices if gridSize changes significantly)
+    try {
+      if (gridSize >= 4) { // Ensure grid is large enough for glider
+        g[1][2] = 1;
+        g[2][3] = 1;
+        g[3][1] = 1;
+        g[3][2] = 1;
+        g[3][3] = 1;
+      } else {
+        // For a smaller grid like 6x6, a simple pattern might be better
+        // Example for 6x6: a block
+        g[1][1] = 1;
+        g[1][2] = 1;
+        g[2][1] = 1;
+        g[2][2] = 1;
+      }
+    } catch (e) {
+      console.error('Error initializing Game of Life grid:', e);
+    }
+    return g;
+  });
+
+  const [isRunning, setIsRunning] = useState(true); // State to control simulation
+  
+  // Effect hook to run the Game of Life simulation
+  useEffect(() => {
+    if (!isRunning) return; // Pause if not running
+
+    // Wrap the simulation interval in a Fiber
+    const fiber = Fiber(() => {
+      const interval = setInterval(() => {
+        setGrid(prevGrid => {
+          const newGrid = prevGrid.map(row => [...row]); // Create a deep copy for next state
+          try {
+            // Apply Game of Life rules
+            for (let i = 0; i < gridSize; i++) {
+              for (let j = 0; j < gridSize; j++) {
+                const neighbors = countNeighbors(prevGrid, i, j);
+                // Rules:
+                // 1. Live cell with < 2 live neighbors dies (underpopulation).
+                // 2. Live cell with 2 or 3 live neighbors lives.
+                // 3. Live cell with > 3 live neighbors dies (overpopulation).
+                // 4. Dead cell with exactly 3 live neighbors becomes a live cell (reproduction).
+                newGrid[i][j] = prevGrid[i][j]
+                  ? neighbors === 2 || neighbors === 3
+                    ? 1
+                    : 0
+                  : neighbors === 3
+                    ? 1
+                    : 0;
+              }
+            }
+            console.log('=== Game of Life Step ===');
+            console.log(gridToString(newGrid)); // Log grid state to console
+          } catch (e) {
+            console.error('Error updating Game of Life grid:', e);
+          }
+          return newGrid; // Return the new grid state
+        });
+      }, 500); // Update every 500ms
+      return () => clearInterval(interval); // Cleanup interval
+    });
+
+    fiber.run(); // Start the Fiber
+
+    return () => {
+      // Cleanup function for useEffect
+      if (fiber.isAlive()) {
+        fiber.throwInto(new Error('Component unmounted'));
+      }
+    };
+  }, [isRunning]); // Rerun effect if isRunning state changes
+
+  /**
+   * Counts live neighbors for a given cell.
+   * @param {Array<Array<number>>} grid - The current grid.
+   * @param {number} i - Row index of the cell.
+   * @param {number} j - Column index of the cell.
+   * @returns {number} Number of live neighbors.
+   */
+  const countNeighbors = (grid, i, j) => {
+    let count = 0;
+    for (let di = -1; di <= 1; di++) {
+      for (let dj = -1; dj <= 1; dj++) {
+        if (di === 0 && dj === 0) continue; // Skip the cell itself
+        const ni = (i + di + gridSize) % gridSize; // Wrap around for toroidal grid
+        const nj = (j + dj + gridSize) % gridSize; // Wrap around for toroidal grid
+        count += grid[ni][nj] || 0; // Add 1 if cell is alive, 0 otherwise
+      }
+    }
+    return count;
+  };
+
+  /**
+   * Converts the grid to a string representation for console logging.
+   * @param {Array<Array<number>>} grid - The grid to convert.
+   * @returns {string} String representation of the grid.
+   */
+  const gridToString = grid => {
+    return grid.map(row => row.map(cell => cell ? '█' : '.').join('')).join('\n');
+  };
+
+  return (
+    <Group name="gameOfLife">
+      {/* Render live cells as blue rectangles */}
+      {grid.map((row, i) =>
+        row.map((cell, j) =>
+          cell ? (
+            <Rectangle
+              key={`${i}-${j}`}
+              from={[x + j * cellSize, y + i * cellSize]} // Top-left corner
+              to={[x + (j + 1) * cellSize, y + (i + 1) * cellSize]} // Bottom-right corner
+              fillColor="#1E90FF" // Blue color for live cells
+            />
+          ) : null // Don't render dead cells
+        )
+      )}
+      {/* Pause/Resume button */}
+      <Rectangle
+        from={[x, y + height + 10]} // Position below the grid
+        to={[x + 50, y + height + 30]} // Size of the button
+        fillColor={isRunning ? '#FF4500' : '#00FF00'} // Orange when running, green when paused
+        onClick={() => setIsRunning(!isRunning)} // Toggle running state on click
+        strokeColor="white"
+        strokeWidth={1}
+        radius={5} /* Rounded corners for the button */
+      />
+    </Group>
+  );
+};
+
+File 8: js/src/components/PaperScene.js
+import React, { useState, useEffect } from 'react';
+import { PaperContainer, Layer, Circle } from '@psychobolt/react-paperjs';
+import { Vector2D } from './Vector2D';
+import { BlueShellLock } from './BlueShellLock'; // Renamed from BlueShellLock to BlueNoteLock in project, but component is still BlueShellLock
+import { GameOfLife } from './GameOfLife';
+import { Loom } from 'loom-js'; // Loom Network integration
+import Fiber from 'fibers'; // For cooperative multitasking
+
+/**
+ * PaperScene component: Manages the Paper.js canvas and integrates other components.
+ * Also demonstrates Loom Network integration for data storage.
+ */
+const PaperScene = ({ width, height }) => {
+  const [lockStatus, setLockStatus] = useState('Locked'); // State for BlueShellLock status
+
+  // Define two Vector2D instances for demonstration
+  const v1 = new Vector2D(width / 2, height / 2, 150); // Center of the canvas
+  const v2 = new Vector2D(50, 50, 150); // Offset vector
+  const sum = v1.add(v2); // Sum of the two vectors
+
+  // Effect hook to demonstrate Loom Network data storage
+  useEffect(() => {
+    // Wrap Loom interaction in a Fiber
+    const fiber = Fiber(() => {
+      console.log('=== Loom Network Demo (BlueNoteLock Project) ===');
+      console.log('Attempting to store BlueShellLock puzzle data...');
+      // Initialize Loom client (assuming Loom DAppChain is running locally)
+      const loom = new Loom('http://localhost:46657'); // Default Loom DAppChain endpoint
+      // Store relevant data on the Loom Network
+      loom.storeData({
+        vector: { x: v1.point.x, y: v1.point.y, conductivity: v1.conductivity },
+        puzzle: 'BlueShellLock', // Referring to the puzzle component
+        project: 'BlueNoteLock', // Referring to the overall project
+        status: lockStatus
+      }).then(tx => {
+        console.log(`Data stored on Loom. Transaction hash: ${tx.hash}`);
+      }).catch(err => {
+        console.error('Loom Network error: Could not connect or store data. Make sure Loom DAppChain is running.', err);
+      });
+    });
+
+    fiber.run(); // Start the Fiber
+
+    return () => {
+      // Cleanup for Fiber if component unmounts
+      if (fiber.isAlive()) {
+        fiber.throwInto(new Error('Component unmounted'));
+      }
+    };
+  }, [v1, lockStatus]); // Rerun effect if v1 or lockStatus changes
+
+  // Console logs for demonstrating Vector2D operations
+  console.log('=== BlueNoteLock Project Vector Demo ===');
+  console.log(`v1: ${v1}`);
+  console.log(`v2: ${v2}`);
+  console.log(`v1 + v2: ${sum}`);
+  console.log(`BlueShellLock puzzle status: ${lockStatus}`);
+
+  return (
+    // PaperContainer creates and manages the Paper.js canvas
+    <PaperContainer canvasProps={{ width, height, style: { borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.5)' } }}>
+      <Layer>
+        {/* Render v1 as a red circle */}
+        <Circle center={[v1.point.x, v1.point.y]} radius={10} fillColor="red" />
+        {/* Render the sum vector as a blue circle */}
+        <Circle center={[sum.point.x, sum.point.y]} radius={10} fillColor="blue" />
+        
+        {/* Integrate the BlueShellLock puzzle component */}
+        <BlueShellLock
+          center={{ x: width / 2 - 100, y: height / 2 }} // Position the lock
+          onUnlock={status => setLockStatus(status ? 'Unlocked' : 'Locked')} // Callback for unlock status
+        />
+        
+        {/* Integrate the Game of Life component */}
+        <GameOfLife x={width / 2 + 50} y={50} width={200} height={200} cellSize={10} />
+      </Layer>
+    </PaperContainer>
+  );
+};
+
+export default PaperScene;
+
+File 9: js/Dockerfile
+# Use a Node.js 16 image as the base
+FROM node:16
+
+# Set the working directory inside the container
+WORKDIR /app
+
+# Copy package.json and install dependencies
+# This step is separated to leverage Docker's layer caching
+COPY package.json .
+RUN npm install
+
+# Copy the rest of the application code
+COPY . .
+
+# Expose port 3000 for the React development server
+EXPOSE 3000
+
+# Command to run the application
+CMD ["npm", "start"]
+
+File 10: java/Vector2D.java
+/**
+ * Represents a 2D vector with an additional conductivity property.
+ */
+public class Vector2D {
+    private double x, y, conductivity;
+
+    /**
+     * Constructs a new Vector2D.
+     * @param x The x-coordinate.
+     * @param y The y-coordinate.
+     * @param conductivity The conductivity value.
+     */
+    public Vector2D(double x, double y, double conductivity) {
+        this.x = x;
+        this.y = y;
+        this.conductivity = conductivity;
+    }
+
+    /**
+     * Adds another Vector2D to this vector.
+     * @param other The other vector to add.
+     * @return A new Vector2D representing the sum.
+     */
+    public Vector2D add(Vector2D other) {
+        return new Vector2D(
+            x + other.x,
+            y + other.y,
+            (conductivity + other.conductivity) / 2 // Average conductivity
+        );
+    }
+
+    /**
+     * Warps the vector's coordinates based on a scale factor.
+     * Simulates a "graphene-inspired" distortion.
+     * @param scale The scale factor for warping.
+     * @return A new warped Vector2D.
+     */
+    public Vector2D warp(double scale) {
+        return new Vector2D(
+            x * (1 + scale * 0.
